@@ -1,12 +1,10 @@
 (ns geoip.core
   (:require [domkm.whois :refer [whois]]
             [clojure.string :as string]
-            [clojure.java.shell :refer [sh]]
-            [clojure.core.async :as async])
-  (:gen-class)
-  )
+            [clojure.java.shell :refer [sh]])
+  (:gen-class))
 
-                                                                                                                  (def squared (bit-shift-left 1 16))
+(def squared (bit-shift-left 1 16))
 (def cubed (bit-shift-left 1 24))
 (def xor->netmask
   (into {}
@@ -146,20 +144,7 @@
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  ;(println (prn-str (pmap #(crawl (* 4 %) (+ 3 (* 4 %))) (range 0 64))))
-
-
-
-
-
   (println
    (prn-str
     (pmap crawl (range 1 256))))
-
-  (shutdown-agents)
-
-  ;; (loop [ip "1.0.0.0"]
-  ;;   (let [[country start mask end] (lookup ip)]
-  ;;     (println country start mask "(next" end ")")
-  ;;     (recur end)))
-  )
+  (shutdown-agents))
