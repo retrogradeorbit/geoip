@@ -4,6 +4,8 @@
             [clojure.java.shell :refer [sh]])
   (:gen-class))
 
+(def ^:dynamic *use-jruby* false)
+
 (def squared (bit-shift-left 1 16))
 (def cubed (bit-shift-left 1 24))
 (def xor->netmask
@@ -85,18 +87,18 @@
 
 
 (defn get-whois [ip]
-  (-> (sh "whois" ip)
-          :out
+  (if *use-jruby*
+    (try
+      (-> ip whois :parts first :body
           (string/split #"\n"))
-
-  #_ (try
-    (-> ip whois :parts first :body
-        (string/split #"\n"))
-    (catch org.jruby.embed.InvokeFailedException e
-      ;; JRuby whois failed. Lets fall back to normal whois command!
-      (-> (sh "whois" ip)
-          :out
-          (string/split #"\n")))))
+      (catch org.jruby.embed.InvokeFailedException e
+        ;; JRuby whois failed. Lets fall back to normal whois command!
+        (-> (sh "whois" ip)
+            :out
+            (string/split #"\n"))))
+    (-> (sh "whois" ip)
+        :out
+        (string/split #"\n"))))
 
 
 (defn lookup [ip]
