@@ -32,7 +32,8 @@
              (mod num 256)])))
 
 
-(defn apply-ip [ip func]                                                                                            (-> ip ip->int func int->ip))
+(defn apply-ip [ip func]
+  (-> ip ip->int func int->ip))
 
 
 (defn next-ip [ip]
@@ -42,7 +43,9 @@
 (defn netmask [start end]
   (- 32
      (xor->netmask
-      (bit-xor                                                                                                           (ip->int start)                                                                                                   (ip->int end)))))
+      (bit-xor
+       (ip->int start)
+       (ip->int end)))))
 
 
 (defn closest-netmask [start end]
