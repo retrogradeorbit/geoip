@@ -6,8 +6,8 @@
 
 (def ^:dynamic *use-jruby* false)
 
-(def squared (bit-shift-left 1 16))
-(def cubed (bit-shift-left 1 24))
+(def squared-256 (bit-shift-left 1 16))
+(def cubed-256 (bit-shift-left 1 24))
 
 ;; map the values of the host part set to all '1'
 ;; to the hostmask length value
@@ -32,7 +32,7 @@
   [ip]
   (let [[a b c d]
         (ip->parts ip)]
-    (+ (* cubed a) (* squared b) (* 256 c) d)))
+    (+ (* cubed-256 a) (* squared-256 b) (* 256 c) d)))
 
 
 (defn int->ip
@@ -41,8 +41,8 @@
   [num]
   (string/join
    "."
-   (map str [(mod (int (/ num cubed)) 256)
-             (mod (int (/ num squared)) 256)
+   (map str [(mod (int (/ num cubed-256)) 256)
+             (mod (int (/ num squared-256)) 256)
              (mod (int (/ num 256)) 256)
              (mod num 256)])))
 
