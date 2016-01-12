@@ -104,7 +104,10 @@
       int->ip))
 
 
-(defn address-selectors [start end]
+(defn address-selectors
+  "given an arbitrary start and end ip returned from whois,
+  decompose this into a vector of ip/netmask pairs."
+  [start end]
   (loop [start start
          end end
          coll []]
@@ -118,7 +121,9 @@
          (conj coll [start mask]))))))
 
 
-(defn get-whois [ip]
+(defn get-whois
+  "issue a whois query. Return a sequence of line strings."
+  [ip]
   (if *use-jruby*
     (try
       (-> ip whois :parts first :body
@@ -166,6 +171,9 @@
   a.b.c.d
   this gathers all the records from start to end. This is used
   to divide and conquer the address space with threads
+
+  so (crawl 1) will fill everything from 1.0.0.0 -> 1.255.255.255
+  (crawl 4 5) will fill everything from 4.0.0.0 -> 5.255.255.255
   "
   ([start]
    (crawl start start))
