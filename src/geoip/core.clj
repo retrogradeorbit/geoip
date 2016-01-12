@@ -186,5 +186,5 @@
   [& args]
   (println
    (prn-str
-    (pmap crawl (range 1 256))))
+    (pmap crawl (range 1 255))))
   (shutdown-agents))
