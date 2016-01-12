@@ -8,24 +8,37 @@
 
 (def squared (bit-shift-left 1 16))
 (def cubed (bit-shift-left 1 24))
-(def xor->netmask
+
+;; map the values of the host part set to all '1'
+;; to the hostmask length value
+(def xor->hostmask
   (into {}
         (for [n (range 1 32)]
           [(dec (bit-shift-left 1 n)) n])))
 
-(defn ip->parts [ip]
+
+(defn ip->parts
+  "convert an IP number as a string into a vector
+  of its parts. eg 10.1.4.2 -> [10 1 4 2]"
+  [ip]
   (-> ip
       (string/split #"\.")
       (->> (map #(Integer/parseInt %)))
       vec))
 
-(defn ip->int [ip]
+(defn ip->int
+  "convert an IP number (represented as a string)
+  into the 32 bit unsigned integer format for it"
+  [ip]
   (let [[a b c d]
         (ip->parts ip)]
     (+ (* cubed a) (* squared b) (* 256 c) d)))
 
 
-(defn int->ip [num]
+(defn int->ip
+  "convert a 32 bit unsigned integer into a string
+  formatted IP number"
+  [num]
   (string/join
    "."
    (map str [(mod (int (/ num cubed)) 256)
@@ -34,33 +47,52 @@
              (mod num 256)])))
 
 
-(defn apply-ip [ip func]
+(defn apply-ip
+  "apply a function to the ip number as an int.
+  takes and returns the ip as a string"
+  [ip func]
   (-> ip ip->int func int->ip))
 
 
-(defn next-ip [ip]
+(defn next-ip
+  "add 1 to the ip. So 10.0.0.1 becomes 10.0.0.2
+  and 10.20.255.255 becomes 10.21.0.0"
+  [ip]
   (apply-ip ip inc))
 
 
-(defn netmask [start end]
+(defn netmask
+  "Given the start and end IP of a CIDR block,
+  return the netmask (must be exact)"
+  [start end]
   (- 32
-     (xor->netmask
+     (xor->hostmask
       (bit-xor
        (ip->int start)
        (ip->int end)))))
 
 
-(defn closest-netmask [start end]
+(defn closest-netmask
+  "Given the start abd end IP of an arbitrary
+  range, return the netmask that will encompass the
+  most IP numbers in the range (but will be
+  incomplete)"
+  [start end]
   (- 32
      (xor->netmask
       (first
        (filter #(<= % (bit-xor
                        (ip->int start)
                        (ip->int end)))
-               (-> xor->netmask keys sort reverse))))))
+               (-> xor->hostmask keys sort reverse))))))
 
 
-(defn host-bits-full [netmask]
+(defn host-bits-full
+  "Given the netmask, return the
+  number with the host bits all filled.
+  eg, for netmask 24, the value returned
+  is 255"
+  [netmask]
   (dec (bit-shift-left 1 (- 32 netmask))))
 
 
@@ -101,7 +133,10 @@
         (string/split #"\n"))))
 
 
-(defn lookup [ip]
+(defn lookup
+  "Perform a single whois lookup on a single IP
+  and return the [country start-ip ip-ranges next-ip]"
+  [ip]
   (let [lines (get-whois ip)
         country-line (-> lines
                          (->> (filter #(.startsWith (string/lower-case %) "country:")))
