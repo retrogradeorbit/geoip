@@ -79,7 +79,7 @@
   incomplete)"
   [start end]
   (- 32
-     (xor->netmask
+     (xor->hostmask
       (first
        (filter #(<= % (bit-xor
                        (ip->int start)
