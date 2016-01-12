@@ -190,9 +190,10 @@
 
 
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Build the geoip database"
   [& args]
-  (println
-   (prn-str
-    (pmap crawl (range 1 255))))
-  (shutdown-agents))
+  (let [fs (doall (map #(future (crawl %)) (range 1 32)))
+        res (map deref fs)])
+
+  ;(shutdown-agents)
+  )
