@@ -141,14 +141,18 @@
 (defn lookup
   "Perform a single whois lookup on a single IP
   and return the [country start-ip ip-ranges next-ip]"
-  [ip]
+  [ip & [skip]]
+  ;(println "lookup" ip)
   (let [lines (get-whois ip)
         country-line (-> lines
                          (->> (filter #(.startsWith (string/lower-case %) "country:")))
                          first)]
     (if-not country-line
       ;; no whois record
-      [nil ip [[ip 24]] (apply-ip ip #(+ % 256))]
+      (do
+        ;(println "no-whois" ip skip)
+        [nil ip (apply-ip ip #(+ % (or skip 1)))
+         (apply-ip ip #(+ % (or skip 1))) (* 2 skip)])
 
       ;; parse whois
       (let [country (-> country-line
