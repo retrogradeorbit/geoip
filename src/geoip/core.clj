@@ -168,7 +168,10 @@
                             (string/split #"\s+")
                             rest
                             (->> (take-nth 2)))]
-        [country start (address-selectors start end) (next-ip end)]))))
+        ;(println start " - " end)
+        [country start end (next-ip end) 1]))))
+
+(def tasks (atom #{}))
 
 (defn crawl
   "start and end are the first number in the ip4 quad; so 'a' in
@@ -181,23 +184,67 @@
   "
   ([start]
    (crawl start start))
-  ([start final]
-   (loop [ip (format "%d.0.0.0" start)
+  ([[sa sb] [fa fb]]
+   (loop [ip (format "%d.%d.0.0" sa sb)
+          skip 1
           coll []]
-     (let [[a _ _ _] (ip->parts ip)]
-       (if (> a final)
+     (let [[a b _ _] (ip->parts ip)]
+       (if (or (> a fa) (> b fb))
          coll
-         (let [[country start mask end] (lookup ip)]
-           (println ip)
-           (recur end
-                  (conj coll [country mask]))))))))
+         (let [[country start end next skip] (lookup ip skip)
+               [i j k l] (ip->parts start)
+               [m n o p] (ip->parts end)
+               ]
+           (when (and (= 255 o) (= 255 p) (= 255 n) (= i m))
+             (swap! tasks
+                    #(reduce disj
+                             %
+                             (for [x (range j (inc n))] [m x])
+                             )))
+           (println (count @tasks))
 
+           ;(println  country start end next skip)
+           (recur next
+                  skip
+                  (conj coll [country start end]))))))))
 
 (defn -main
   "Build the geoip database"
   [& args]
-  (let [fs (doall (map #(future (crawl %)) (range 1 32)))
-        res (map deref fs)])
+  ;; all tasks need to be done
+  (reset! tasks  (into #{} (for [a (range 1 255)
+                                 b (range 0 256)] [a b])))
 
-  ;(shutdown-agents)
+  ;; spawn workers
+  (println (map deref
+                (doall (for [n (range 512)]
+                         (future
+                           (loop []
+                             (let [t @tasks
+                                   r (first t)]
+                               (when r
+                                 (swap! tasks disj r)
+                                 (println "crawling" r)
+                                 (println "result:" (crawl r))
+                                 (recur))
+
+                               )))))))
+
+  #_ (let [fs (doall (map (fn [[a b]] (future (crawl [a (* 16 b) (+ 15 (* 16 b))])))
+                          (for [a (range 1 128)
+                                b (range 0 16)] [a b])))
+           res (map deref fs)
+
+           out (-> res
+                   (->> (apply concat))
+                   (->> (map reverse))
+                   (->> (map vec))
+                   (->> (into {}))
+                   )
+           ]
+       (println res)
+       (println (prn-str  out))
+       )
+
+  (shutdown-agents)
   )
