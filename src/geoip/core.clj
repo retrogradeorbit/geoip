@@ -226,25 +226,8 @@
                                  (swap! tasks disj r)
                                  (println "crawling" r)
                                  (println "result:" (crawl r))
-                                 (recur))
+                                 (recur)))))))))
 
-                               )))))))
-
-  #_ (let [fs (doall (map (fn [[a b]] (future (crawl [a (* 16 b) (+ 15 (* 16 b))])))
-                          (for [a (range 1 128)
-                                b (range 0 16)] [a b])))
-           res (map deref fs)
-
-           out (-> res
-                   (->> (apply concat))
-                   (->> (map reverse))
-                   (->> (map vec))
-                   (->> (into {}))
-                   )
-           ]
-       (println res)
-       (println (prn-str  out))
-       )
-
+  ;; is this even needed?
   (shutdown-agents)
   )
