@@ -201,9 +201,6 @@
                              %
                              (for [x (range j (inc n))] [m x])
                              )))
-           (println (count @tasks))
-
-           ;(println  country start end next skip)
            (recur next
                   skip
                   (conj coll [country start end]))))))))
@@ -212,21 +209,51 @@
   "Build the geoip database"
   [& args]
   ;; all tasks need to be done
-  (reset! tasks  (into #{} (for [a (range 1 255)
-                                 b (range 0 256)] [a b])))
+  (let [nums (for [a (range 1 255)
+                   b (range 0 256)] [a b])
+        initial (count nums)]
 
-  ;; spawn workers
-  (println (map deref
-                (doall (for [n (range 512)]
-                         (future
-                           (loop []
-                             (let [t @tasks
-                                   r (first t)]
-                               (when r
-                                 (swap! tasks disj r)
-                                 (println "crawling" r)
-                                 (println "result:" (crawl r))
-                                 (recur)))))))))
+    (reset! tasks  (into #{} nums))
+
+    ;; spawn workers
+    (let [threads 1024
+          results
+          (doall (for [n (range threads)]
+                   (future
+                     (loop []
+                       (let [t @tasks
+                             r (first t)]
+                         (when r
+                           (swap! tasks disj r)
+                                        ;(println "crawling" r)
+                                        ;(println "result:" (crawl r))
+                           (crawl r)
+                           (recur)))))))]
+      (future (loop []
+                (let [real (count (filter realized? results))
+                      unreal (- threads real)
+                      total initial
+                      left (count @tasks)
+                      new (+ unreal
+                             (count @tasks))
+                      diff  (max 0 (- total new))]
+
+                  ;(t/move-cursor term 0 0)
+                  (print
+                                (str "\r"
+                                 (format "%2.2f%%" (float (* 100 (/ diff total))))
+                                 (format " (%d/%d)" diff total)
+                                 "  "
+                                 ))
+                  (flush)
+
+                  (Thread/sleep 500)
+                  (when (< diff total)
+                    (recur)))))
+
+      (let [derefed (doall (map deref results))]
+        (println derefed))
+      ))
 
   ;; is this even needed?
   (shutdown-agents)
