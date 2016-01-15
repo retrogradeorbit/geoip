@@ -197,6 +197,15 @@
 
 (def tasks (atom #{}))
 
+(defn get-triplets-between [start end]
+  (let [s (-> start parts->int dec (/ squared-256) int inc)
+        e (-> end parts->int inc (/ squared-256) int)]
+    (map
+     #(let [[a b _ _]
+            (int->parts (* squared-256 %))]
+        [a b])
+     (range s  e))))
+
 (defn crawl
   "start and end are the first number in the ip4 quad; so 'a' in
   a.b.c.d
@@ -209,24 +218,21 @@
   ([start]
    (crawl start start))
   ([[sa sb] [fa fb]]
-   (loop [ip (format "%d.%d.0.0" sa sb)
-          skip 1
-          coll []]
-     (let [[a b _ _] (ip->parts ip)]
-       (if (or (> a fa) (> b fb))
-         coll
-         (let [[country start end next skip] (lookup ip skip)
-               [i j k l] (ip->parts start)
-               [m n o p] (ip->parts end)
-               ]
-           (when (and (= 255 o) (= 255 p) (= 255 n) (= i m))
-             (swap! tasks
-                    #(reduce disj
-                             %
-                             (for [x (range j (inc n))] [m x])
-                             )))
-           (recur next
-                  skip
+   (let [final (parts->int [fa fb 255 255])]
+     (loop [num (parts->int [sa sb 0 0])
+            skip 1
+            coll []]
+       (let [[country start end next skip] (lookup (int->ip num) skip)
+             triplets (get-triplets-between (ip->parts start) (ip->parts end))
+
+             ]
+         (when (seq triplets)
+           (swap! tasks #(reduce disj % triplets)))
+
+         (if (> num final)
+           coll
+
+           (recur (inc (ip->int next)) skip
                   (conj coll [country start end]))))))))
 
 (defn -main
@@ -234,7 +240,8 @@
   [& args]
   ;; all tasks need to be done
   (let [nums (for [a (range 1 255)
-                   b (range 0 256)] [a b])
+                   b (range 0 256)                   ]
+               [a b])
         initial (count nums)]
 
     (reset! tasks  (into #{} nums))
@@ -259,7 +266,7 @@
                       total initial
                       left (count @tasks)
                       new (+ unreal
-                             (count @tasks))
+                             left)
                       diff  (max 0 (- total new))]
 
                   ;(t/move-cursor term 0 0)
