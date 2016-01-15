@@ -26,13 +26,27 @@
       (->> (map #(Integer/parseInt %)))
       vec))
 
+
+(defn parts->int
+  "Convert a vector length 4 into an int"
+  [[a b c d]]
+  (+ (* cubed-256 a) (* squared-256 b) (* 256 c) d))
+
+
+(defn int->parts
+  "convers an int into a vector length 4"
+  [num]
+  [(mod (int (/ num cubed-256)) 256)
+   (mod (int (/ num squared-256)) 256)
+   (mod (int (/ num 256)) 256)
+   (mod num 256)])
+
+
 (defn ip->int
   "convert an IP number (represented as a string)
   into the 32 bit unsigned integer format for it"
   [ip]
-  (let [[a b c d]
-        (ip->parts ip)]
-    (+ (* cubed-256 a) (* squared-256 b) (* 256 c) d)))
+  (-> ip ip->parts parts->int))
 
 
 (defn int->ip
@@ -41,10 +55,7 @@
   [num]
   (string/join
    "."
-   (map str [(mod (int (/ num cubed-256)) 256)
-             (mod (int (/ num squared-256)) 256)
-             (mod (int (/ num 256)) 256)
-             (mod num 256)])))
+   (map str (int->parts num))))
 
 
 (defn apply-ip
@@ -133,9 +144,22 @@
         (-> (sh "whois" ip)
             :out
             (string/split #"\n"))))
-    (-> (sh "whois" ip)
-        :out
-        (string/split #"\n"))))
+    (let [{:keys [out exit err]} (loop []
+                               (let [res
+                                     (try
+                                       (sh "whois" ip)
+                                       (catch java.io.IOException e
+                                         (println "sleeping...")
+                                         (Thread/sleep (rand-nth [300 500 700 1000 1500]))
+                                         (println "again!")
+                                         nil))]
+                                 (if res
+                                   res
+                                   (recur))))]
+      #_ (when-not (zero? exit)
+        (println exit "=>" err)
+        (println out))
+      (string/split out #"\n"))))
 
 
 (defn lookup
