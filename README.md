@@ -59,6 +59,19 @@ agressively still takes a few hours. To speed things up we are going
 to limit our database to a part of the IP number space that is fairly
 quick to trawl.
 
+First we have no database::
+
+    $ ls -alF db.edn
+    ls: cannot access db.edn: No such file or directory
+
+Lets build one by trawling
+
+    $ lein run -- --start 124.0.0.0 --end 125.255.255.255
+    9.59% (49/511)
+    ...
+
+Wait until the IP space has been crawled. It should only take a few
+minutes on a modern machine.
 
 
 
