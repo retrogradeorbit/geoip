@@ -32,11 +32,19 @@ Running from installed bin:
 
 ## Options
 
-  -s, --start IP       1.0.0.0  Starting IP number
-  -e, --end IP         2.0.0.0  Ending IP number
-  -d, --db DBFILE      db.edn   The database file to use
-  -q, --query IP                Lookip an ip in the database
-  -t, --threads COUNT  512      The maximum number of whois trawling threads
+Basic options:
+
+    -s, --start IP       1.0.0.0  Starting IP number
+    -e, --end IP         2.0.0.0  Ending IP number
+    -d, --db DBFILE      db.edn   The database file to use
+    -q, --query IP                Lookip an ip in the database
+    -t, --threads COUNT  512      The maximum number of whois trawling threads
+
+`start` and `end` define the IP number range to trawl. `db` can be used to specify the database file to save the data to, and to run queries against.
+
+`query` can be used to query the database for a particular IP.
+
+`threads` defines how many whois worker threads will be spawned at once to walk the IP number space. The default is 512 and will use all your cores and hyperthreads to trawl the whois records. Be warned you may be blocked for some time by certain registries if you hit them too hard, too often.
 
 ## Examples
 
