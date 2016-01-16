@@ -13,14 +13,14 @@ Download. Run ```lein bin```. Copy ```target/geoip``` to your path.
 
 Running under lein:
 
-    $ geoip$ lein run -- --help
-  -h, --help
-  -v, --version
-  -s, --start IP       1.0.0.0  Starting IP number
-  -e, --end IP         2.0.0.0  Ending IP number
-  -d, --db DBFILE      db.edn   The database file to use
-  -q, --query IP                Lookip an ip in the database
-  -t, --threads COUNT  512      The maximum number of whois trawling threads
+    /path/to/geoip$ lein run -- --help
+      -h, --help
+      -v, --version
+      -s, --start IP       1.0.0.0  Starting IP number
+      -e, --end IP         2.0.0.0  Ending IP number
+      -d, --db DBFILE      db.edn   The database file to use
+      -q, --query IP                Lookip an ip in the database
+      -t, --threads COUNT  512      The maximum number of whois trawling threads
 
 Running from built jar :
 
