@@ -4,7 +4,9 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [com.domkm/whois "0.0.1"]]
+                 [com.domkm/whois "0.0.1"]
+                 [com.taoensso/nippy "2.10.0"]
+                 [org.clojure/tools.cli "0.3.1"]]
   :main ^:skip-aot geoip.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

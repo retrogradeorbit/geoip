@@ -112,6 +112,9 @@
         [a b])
      (range s  e))))
 
+(defonce data (atom {}))
+
+
 (defn crawl
   "start and end are the first number in the ip4 quad; so 'a' in
   a.b.c.d
@@ -135,62 +138,103 @@
          (when (seq triplets)
            (swap! tasks #(reduce disj % triplets)))
 
+         ;; merge output data into the shared database
+         (swap! data db/add-indexes start end country)
+
          (if (> num final)
            coll
 
            (recur (inc (ip->int next)) skip
                   (conj coll [country start end]))))))))
 
+
+
+
+(def cli-options
+  [
+   ["-h" "--help"]
+   ["-v" "--version"]
+   ["-s" "--start IP" "Starting IP number"
+    :default "1.0.0.0"
+    ;:validate [#()]
+    ]
+   ["-e" "--end IP" "Ending IP number"
+    :default "2.0.0.0"]
+   ])
+
+(def version "0.0.1")
+
 (defn -main
   "Build the geoip database"
   [& args]
   ;; all tasks need to be done
-  (let [nums (for [a (range 1 255)
-                   b (range 0 16)                   ]
-               [a b])
-        initial (count nums)]
+  (let [{:keys [options summary]} (cli/parse-opts args cli-options)]
+    (cond
+      (:version options)
+      (println "Version:" version)
 
-    (reset! tasks  (into #{} nums))
+      (:help options)
+      (println summary)
 
-    ;; spawn workers
-    (let [threads 1024
-          results
-          (doall (for [n (range threads)]
-                   (future
-                     (loop []
-                       (let [t @tasks
-                             r (first t)]
-                         (when r
-                           (swap! tasks disj r)
+      :else
+      (let [start (:start options)
+            end (:end options)
+            si (-> start ip->int (/ squared-256) int)
+            ei (-> end ip->int (/ squared-256) int)
+
+            parts (for [n (range si ei)]
+                    [
+                     (-> n (/ 256) int)
+                     (mod n 256)
+                     ])
+
+            nums parts
+            initial (count nums)]
+
+        (reset! tasks  (into #{} nums))
+
+        ;; spawn workers
+        (let [threads 128
+              results
+              (doall (for [n (range threads)]
+                       (future
+                         (loop []
+                           (let [t @tasks
+                                 r (first t)]
+                             (when r
+                               (swap! tasks disj r)
                                         ;(println "crawling" r)
                                         ;(println "result:" (crawl r))
-                           (crawl r)
-                           (recur)))))))]
-      (future (loop []
-                (let [real (count (filter realized? results))
-                      unreal (- threads real)
-                      total initial
-                      left (count @tasks)
-                      new (+ unreal
-                             left)
-                      diff  (max 0 (- total new))]
+                               (crawl r)
+                               (recur)))))))]
+          (future (loop []
+                    (let [real (count (filter realized? results))
+                          unreal (- threads real)
+                          total initial
+                          left (count @tasks)
+                          new (+ unreal
+                                 left)
+                          diff  (max 0 (- total new))]
 
-                  ;(t/move-cursor term 0 0)
-                  (print
-                                (str "\r"
-                                 (format "%2.2f%%" (float (* 100 (/ diff total))))
-                                 (format " (%d/%d)" diff total)
-                                 "  "
-                                 ))
-                  (flush)
+                                        ;(t/move-cursor term 0 0)
+                      (print
+                       (str "\r"
+                            (format "%2.2f%%" (float (* 100 (/ diff total))))
+                            (format " (%d/%d)" diff total)
+                            "  "
+                            ))
+                      (flush)
 
-                  (Thread/sleep 500)
-                  (when (< diff total)
-                    (recur)))))
+                      (Thread/sleep 500)
+                      (if (< diff total)
+                        (recur)
+                        (println)))))
 
-      (let [derefed (doall (map deref results))]
-        (println derefed))
-      ))
+          (let [derefed (doall (map deref results))]
+            (with-open [w (io/output-stream "database.nippy")]
+              (nippy/freeze-to-out! (DataOutputStream. w) @data))
+            (spit "database.edn" (prn-str @data))
+            )))))
 
   ;; is this even needed?
   (shutdown-agents)
