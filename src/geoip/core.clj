@@ -1,6 +1,7 @@
 (ns geoip.core
   (:require [domkm.whois :refer [whois]]
             [clojure.string :as string]
+            [clojure.edn :as edn]
             [clojure.tools.cli :as cli]
             [clojure.java.io :as io]
             [clojure.java.shell :refer [sh]]
@@ -160,9 +161,26 @@
     ]
    ["-e" "--end IP" "Ending IP number"
     :default "2.0.0.0"]
+   ["-d" "--db DBFILE" "The database file to use"
+    :default "db.edn"]
+   ["-q" "--query IP" "Lookip an ip in the database"]
+   ["-t" "--threads COUNT" "The maximum number of whois trawling threads"
+    :default 512]
    ])
 
 (def version "0.0.1")
+
+(defn load-db [filename]
+  (println "loading..." filename)
+  (edn/read-string (slurp filename))
+)
+
+(defn load-db! [filename]
+  (reset! data (load-db filename)))
+
+(defn save-db! [db filename]
+  (println "saving..." filename)
+  (spit filename (prn-str db)))
 
 (defn -main
   "Build the geoip database"
@@ -175,6 +193,12 @@
 
       (:help options)
       (println summary)
+
+      (:query options)
+      (println (:query options) "=>"
+               (apply db/lookup
+                      (-> options :db load-db)
+                      (ip->parts (:query options))))
 
       :else
       (let [start (:start options)
@@ -191,10 +215,12 @@
             nums parts
             initial (count nums)]
 
+        (when (.exists (io/file (:db options)))
+          (load-db! (:db options)))
         (reset! tasks  (into #{} nums))
 
         ;; spawn workers
-        (let [threads 128
+        (let [threads (Integer/parseInt (:threads options))
               results
               (doall (for [n (range threads)]
                        (future
@@ -231,11 +257,49 @@
                         (println)))))
 
           (let [derefed (doall (map deref results))]
-            (with-open [w (io/output-stream "database.nippy")]
-              (nippy/freeze-to-out! (DataOutputStream. w) @data))
-            (spit "database.edn" (prn-str @data))
+
+            #_ (with-open [w (io/output-stream "database.nippy")]
+                 (nippy/freeze-to-out! (DataOutputStream. w) @data))
+
+            (save-db! @data (:db options))
             )))))
 
   ;; is this even needed?
   (shutdown-agents)
   )
+
+
+
+
+;;
+;; % This is the RIPE Database query service.
+;; % The objects are in RPSL format.
+;; %
+;; % The RIPE Database is subject to Terms and Conditions.
+;; % See http://www.ripe.net/db/support/db-terms-conditions.pdf
+
+;; %ERROR:306: connections exceeded
+;; %
+;; % Number of connections from a single IP address
+;; % has exceeded the maximum number allowed (3).
+
+;; % This query was served by the RIPE Database Query Service version 1.83.1 (DB-3)
+
+
+
+
+
+;; % This is the RIPE Database query service.
+;; % The objects are in RPSL format.
+;; %
+;; % The RIPE Database is subject to Terms and Conditions.
+;; % See http://www.ripe.net/db/support/db-terms-conditions.pdf
+
+;; %ERROR:201: access denied for YOUR.IP.ADDRESS.HERE
+;; %
+;; % Queries from your IP address have passed the daily limit of controlled objects.
+;; % Access from your host has been temporarily denied.
+;; % For more information, see
+;; % http://www.ripe.net/data-tools/db/faq/faq-db/why-did-you-receive-the-error-201-access-denied
+
+;; % This query was served by the RIPE Database Query Service version 1.83.1 (DB-3)
