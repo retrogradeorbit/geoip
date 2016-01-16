@@ -49,7 +49,7 @@
   (-> (add-index test-db 10 10 10 0 255 :au)
       (add-index 10 10 10 64 191 :us)
       (add-index 10 10 10 0 255 :au)
-      (lookup 10 0 0 1))
+      (lookup 10 10 10 128))
 
 
   ({:a :A :b :B} nil)
