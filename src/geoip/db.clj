@@ -1,4 +1,5 @@
-(ns geoip.db)
+(ns geoip.db
+  (:require [geoip.ip :as ip]))
 
 ;; in memory database that stores mappings of ip spaces to their
 ;; country.
@@ -17,7 +18,8 @@
         (update-in
          [a b c]
          (fn [d-map]
-           (if (contains? d-map end+1)
+           (if (or (= end+1 256)
+                   (contains? d-map end+1))
              ;; unchanged
              d-map
 
@@ -40,6 +42,31 @@
         k (last (take-while #(<= % d) (sort (keys d-map))))]
     (d-map k)))
 
+(defn make-triplet [num]
+  [(mod (int (/ num ip/squared-256)) 256)
+   (mod (int (/ num 256)) 256)
+   (mod num 256)])
+
+(defn indexes-between [start end]
+  (let [s (ip/ip->int start)
+        e (ip/ip->int end)
+        s-base (-> s (/ 256) int)
+        e-base (-> e (/ 256) int)
+        s-rem (mod s 256)
+        e-rem (mod e 256)
+        base-range (- e-base s-base)]
+    (map vector
+         (map make-triplet (range s-base (inc e-base)))
+         (conj (repeat base-range 0) s-rem)
+         (conj (vec (repeat base-range 255)) e-rem))))
+
+(defn add-indexes [db start end country]
+  (reduce (fn [db [[a b c] s e]]
+            (add-index db a b c s e country))
+          db
+          (indexes-between start end)))
+
+
 
 (comment
   (def test-db
@@ -52,7 +79,9 @@
   (-> (add-index test-db 10 10 10 0 255 :au)
       (add-index 10 10 10 64 191 :us)
       (add-index 10 10 10 0 255 :au)
-      (lookup 10 10 10 128))
+      (add-indexes "20.0.0.0" "20.20.2.128" :zim)
+
+      (lookup 20 20 1 0))
 
 
   ({:a :A :b :B} nil)
