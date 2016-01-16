@@ -71,9 +71,24 @@ Lets build one by trawling all of 124.*.*.* and 125.*.*.*
     ...
 
 Wait until the IP space has been crawled. It should only take a few
-minutes on a modern machine.
+minutes on a modern machine. Now you should have a database.
 
+    $ du -sh db.edn
+    2.4M	db.edn
 
+Make some queries to the database.
+
+    $ lein run -- --query 124.0.0.0
+    loading... db.edn
+    124.0.0.0 => :au
+
+Returns a keyword of the ISO 2 letter country code. `:au` is Australia.
+
+    $ lein run -- --query 125.0.0.0
+    loading... db.edn
+    125.0.0.0 => :jp
+
+This IP is from Japan.
 
 ### Bugs
 
