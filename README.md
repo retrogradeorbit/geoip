@@ -89,10 +89,32 @@ Returns a keyword of the ISO 2 letter country code. `:au` is Australia.
     125.0.0.0 => :jp
 
 This IP is from Japan.
+You can query many IPs at once.
+
+    $ lein run -- --query 125.0.0.0,125.1.0.0,125.2.0.0,125.3.0.0
+    loading... db.edn
+    125.0.0.0 => :jp
+    125.1.0.0 => :jp
+    125.2.0.0 => :au
+    125.3.0.0 => :au
+
+you can query a range.
+
+    $ lein run -- --query 125.1.0.0-125.2.0.0
+    ...
+
+or you can scan a range and get the locations where the country zone changes.
+
+    $ lein run -- --changes 124.0.0.0-125.255.255.255
+    loading... db.edn
+    124.0.0.0 => :au => 124.255.255.255
+    125.0.0.0 => :jp => 125.1.255.255
+    125.2.0.0 => :au => 125.255.255.255
 
 ### Bugs
 
-Plenty.
+Plenty. It's too slow. The dataformat is poor. scanning needs to be
+first class. store the points where the countries change.
 
 ## License
 

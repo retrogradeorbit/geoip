@@ -163,7 +163,8 @@
     :default "2.0.0.0"]
    ["-d" "--db DBFILE" "The database file to use"
     :default "db.edn"]
-   ["-q" "--query IP" "Lookip an ip in the database"]
+   ["-q" "--query IP" "Lookup an ip in the database"]
+   ["-c" "--changes IP-IP" "Lookip an ip in the database"]
    ["-t" "--threads COUNT" "The maximum number of whois trawling threads"
     :default "512"]
    ])
@@ -194,11 +195,59 @@
       (:help options)
       (println summary)
 
+      (:changes options)
+      (let [data (-> options :db load-db)
+            parts (string/split (:changes options) #",")
+            double-parts (filter #(.contains % "-") parts)]
+        ;(println "double-parts" double-parts)
+        ;(println "!" (prn-str double-parts))
+        (loop [[h & t] double-parts]
+          ;(println h)
+          (let [[s e] (map ip->int (string/split h #"-"))]
+            (loop [n s
+                   c1 nil]
+              (let [c2 (apply db/lookup
+                            data
+                            (int->parts n))]
+                (when (not= c2 c1)
+                  (when (not= n s)
+                    (println " =>" (int->ip (dec n))))
+                  (when (not= n e)
+                    (print (int->ip n) "=>" c2))
+
+                  (flush))
+
+                (when (<= n e)
+                  (recur (inc n) c2)))))
+          (when (seq t) (recur t))))
+
       (:query options)
-      (println (:query options) "=>"
-               (apply db/lookup
-                      (-> options :db load-db)
-                      (ip->parts (:query options))))
+      (let [data (-> options :db load-db)
+            parts (string/split (:query options) #",")
+            double-parts (filter #(.contains % "-") parts)
+            single-parts (filter #(not (.contains % "-")) parts)]
+        ;(println "single-parts" single-parts)
+        ;(println "double-parts" double-parts)
+        (when (seq single-parts)
+          (loop [[h & t] single-parts]
+            (println h "=>"
+                     (apply db/lookup
+                            data
+                            (ip->parts h)))
+            (when (seq t) (recur t))))
+        (println "!" (prn-str double-parts))
+        (loop [[h & t] double-parts]
+          (println h)
+          (let [[s e] (map ip->int (string/split h #"-"))]
+            (doall
+             (map
+              #(println (int->ip %) "=>"
+                        (apply db/lookup
+                               data
+                               (int->parts %)))
+              (range s (inc e))
+              )))
+          (when (seq t) (recur t))))
 
       :else
       (let [start (:start options)
@@ -220,7 +269,7 @@
         (reset! tasks  (into #{} nums))
 
         ;; spawn workers
-        (let [threads (Integer/parseInt (:threads options))
+        (let [threads (Integer/parseInt  (:threads options))
               results
               (doall (for [n (range threads)]
                        (future
