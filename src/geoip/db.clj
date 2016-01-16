@@ -23,17 +23,17 @@
 
              ;; if there is a prior marker, put that in there, else nil
              (assoc d-map end+1
-                    (-> d-map keys sort
-                        (->> (take-while #(< % start)))
-                        last d-map)))))
+                    (->> d-map keys sort
+                         (take-while #(< % start))
+                         last d-map)))))
 
         ;; remove any keys between start and end
         (update-in
          [a b c]
          (fn [d-map]
-           (-> d-map keys
-               (->> (filter #(< start % end+1)))
-               (->> (reduce dissoc d-map))))))))
+           (->> d-map keys
+                (filter #(< start % end+1))
+                (reduce dissoc d-map)))))))
 
 (defn lookup [db a b c d]
   (let [d-map (get-in db [a b c] {})
