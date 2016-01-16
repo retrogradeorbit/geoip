@@ -240,7 +240,7 @@
   [& args]
   ;; all tasks need to be done
   (let [nums (for [a (range 1 255)
-                   b (range 0 256)                   ]
+                   b (range 0 16)                   ]
                [a b])
         initial (count nums)]
 
