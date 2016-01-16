@@ -165,7 +165,7 @@
     :default "db.edn"]
    ["-q" "--query IP" "Lookip an ip in the database"]
    ["-t" "--threads COUNT" "The maximum number of whois trawling threads"
-    :default 512]
+    :default "512"]
    ])
 
 (def version "0.0.1")
