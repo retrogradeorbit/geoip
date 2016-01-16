@@ -7,6 +7,8 @@
                  [com.domkm/whois "0.0.1"]
                  [com.taoensso/nippy "2.10.0"]
                  [org.clojure/tools.cli "0.3.1"]]
+  :plugins [[lein-bin "0.3.4"]]
+  :bin {:name "geoip"}
   :main ^:skip-aot geoip.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
