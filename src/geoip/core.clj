@@ -113,7 +113,7 @@
         [a b])
      (range s  e))))
 
-(defonce data (atom {}))
+(defonce data (atom db/empty-db))
 
 
 (defn crawl
@@ -140,7 +140,7 @@
            (swap! tasks #(reduce disj % triplets)))
 
          ;; merge output data into the shared database
-         (swap! data db/add-indexes start end country)
+         (swap! data db/add-range (ip->int start) (ip->int end) country)
 
          (if (> num final)
            coll
@@ -162,7 +162,7 @@
    ["-e" "--end IP" "Ending IP number"
     :default "2.0.0.0"]
    ["-d" "--db DBFILE" "The database file to use"
-    :default "db.edn"]
+    :default "db.nippy"]
    ["-q" "--query IP" "Lookup an ip in the database"]
    ["-c" "--changes IP-IP" "Lookip an ip in the database"]
    ["-t" "--threads COUNT" "The maximum number of whois trawling threads"
@@ -173,15 +173,16 @@
 
 (defn load-db [filename]
   (println "loading..." filename)
-  (edn/read-string (slurp filename))
-)
+  (with-open [r (io/input-stream filename)]
+    (nippy/thaw-from-in! (DataInputStream. r))))
 
 (defn load-db! [filename]
   (reset! data (load-db filename)))
 
-(defn save-db! [db filename]
+(defn save-db! [database filename]
   (println "saving..." filename)
-  (spit filename (prn-str db)))
+  (with-open [w (io/output-stream filename)]
+    (nippy/freeze-to-out! (DataOutputStream. w) (db/filter-db database))))
 
 (defn -main
   "Build the geoip database"
@@ -204,21 +205,11 @@
         (loop [[h & t] double-parts]
           ;(println h)
           (let [[s e] (map ip->int (string/split h #"-"))]
-            (loop [n s
-                   c1 nil]
-              (let [c2 (apply db/lookup
-                            data
-                            (int->parts n))]
-                (when (not= c2 c1)
-                  (when (not= n s)
-                    (println " =>" (int->ip (dec n))))
-                  (when (not= n e)
-                    (print (int->ip n) "=>" c2))
-
-                  (flush))
-
-                (when (<= n e)
-                  (recur (inc n) c2)))))
+            (loop [n s]
+              (let [[nip c2] (db/next-change data n)]
+                (println (int->ip nip) "=>" c2)
+                (when (< nip e)
+                  (recur nip)))))
           (when (seq t) (recur t))))
 
       (:query options)
