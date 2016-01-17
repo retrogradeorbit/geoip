@@ -1,9 +1,11 @@
 # geoip
 
-Build a ip number to country look up database from trawling whois
-records. Query that database to lookup ip's and find out what country
-they are located in. Export the database to a number of different
-formats including plain SQL for integration into existing systems.
+Lookup the geographical location of IP numbers. No need for
+MaxMind. DIY database builder. Build an "ip number to country look up"
+database from trawling whois records. Query that database to lookup
+ip's and find out what country they are located in. Export the
+database to a number of different formats including plain SQL for
+integration into existing systems.
 
 ## Installation
 
