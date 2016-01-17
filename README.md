@@ -20,7 +20,7 @@ Running under lein:
       -v, --version
       -s, --start IP       1.0.0.0  Starting IP number
       -e, --end IP         2.0.0.0  Ending IP number
-      -d, --db DBFILE      db.edn   The database file to use
+      -d, --db DBFILE      db.nippy   The database file to use
       -q, --query IP                Lookip an ip in the database
       -t, --threads COUNT  512      The maximum number of whois trawling threads
 
@@ -38,7 +38,7 @@ Basic options:
 
     -s, --start IP       1.0.0.0  Starting IP number
     -e, --end IP         2.0.0.0  Ending IP number
-    -d, --db DBFILE      db.edn   The database file to use
+    -d, --db DBFILE      db.nippy   The database file to use
     -q, --query IP                Lookip an ip in the database
     -t, --threads COUNT  512      The maximum number of whois trawling threads
 
@@ -63,8 +63,8 @@ quick to trawl.
 
 First we have no database.
 
-    $ ls -alF db.edn
-    ls: cannot access db.edn: No such file or directory
+    $ ls -alF db.nippy
+    ls: cannot access db.nippy: No such file or directory
 
 Lets build one by trawling all of 124.*.*.* and 125.*.*.*
 
@@ -75,26 +75,26 @@ Lets build one by trawling all of 124.*.*.* and 125.*.*.*
 Wait until the IP space has been crawled. It should only take a few
 minutes on a modern machine. Now you should have a database.
 
-    $ du -sh db.edn
-    2.4M	db.edn
+    $ du -sh db.nippy
+    2.4M	db.nippy
 
 Make some queries to the database.
 
     $ lein run -- --query 124.0.0.0
-    loading... db.edn
+    loading... db.nippy
     124.0.0.0 => :au
 
 Returns a keyword of the ISO 2 letter country code. `:au` is Australia.
 
     $ lein run -- --query 125.0.0.0
-    loading... db.edn
+    loading... db.nippy
     125.0.0.0 => :jp
 
 This IP is from Japan.
 You can query many IPs at once.
 
     $ lein run -- --query 125.0.0.0,125.1.0.0,125.2.0.0,125.3.0.0
-    loading... db.edn
+    loading... db.nippy
     125.0.0.0 => :jp
     125.1.0.0 => :jp
     125.2.0.0 => :au
@@ -108,7 +108,7 @@ you can query a range.
 or you can scan a range and get the locations where the country zone changes.
 
     $ lein run -- --changes 124.0.0.0-125.255.255.255
-    loading... db.edn
+    loading... db.nippy
     124.0.0.0 => :au => 124.255.255.255
     125.0.0.0 => :jp => 125.1.255.255
     125.2.0.0 => :au => 125.255.255.255
