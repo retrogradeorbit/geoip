@@ -76,7 +76,7 @@ Wait until the IP space has been crawled. It should only take a few
 minutes on a modern machine. Now you should have a database.
 
     $ du -sh db.nippy
-    2.4M	db.nippy
+    12K	db.nippy
 
 Make some queries to the database.
 

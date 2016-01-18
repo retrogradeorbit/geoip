@@ -15,9 +15,7 @@
   [
    (last (take-while #(<= % num) (keys (:starts db))))
    (first (drop-while #(< % num) (keys (:ends db))))
-   ]
-
-  )
+   ])
 
 ;; (find-ip empty-db 9000)
 
